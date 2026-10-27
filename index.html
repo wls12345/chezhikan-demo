@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车智勘-汽车保险理赔实训智能助教｜PDF导出｜教学/比赛双模式</title>
+    <!-- html2pdf CDN 用于前端直接生成PDF报告 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary:#2563eb;
+            --success:#16a34a;
+            --warning:#d97706;
+            --danger:#dc2626;
+            --bg:#f1f5f9;
+            --card:#ffffff;
+            --border:#cbd5e1;
+            --text-main:#0f172a;
+            --text-secondary:#475569;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,"Microsoft YaHei",sans-serif;}
+        body{background:var(--bg);padding:16px;}
+        .container{max-width:1400px;margin:0 auto;}
+        .sim-alert{background:#1e293b;color:#e2e8f0;padding:12px 18px;border-radius:12px;margin-bottom:16px;border-left:6px solid #f59e0b;font-size:0.9rem;}
+        .sim-alert strong{color:#fbbf24;}
+        .header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;}
+        .header h1{font-size:1.6rem;color:var(--text-main);}
+        .header h1 span{font-size:0.8rem;background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;}
+        .header-opt{display:flex;gap:10px;flex-wrap:wrap;}
+        .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:500;}
+        .btn-primary{background:var(--primary);color:white;}
+        .btn-warning{background:var(--warning);color:white;}
+        .btn-ghost{background:transparent;border:1px solid var(--primary);color:var(--primary);}
+        .btn-danger{background:var(--danger);color:#fff;}
+        .btn-sm{padding:4px 8px;font-size:12px;}
+        .layout-wrap{display:grid;grid-template-columns:62% 36%;gap:2%;}
+        @media (max-width:1080px){
+            .layout-wrap{grid-template-columns:1fr;}
+        }
+        .card{background:var(--card);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+        .card-title{font-size:1.15rem;font-weight:600;color:var(--text-main);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+        .step-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+        .step-tab{border:1px solid var(--border);background:#fff;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:13px;}
+        .step-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .panel{display:none;}
+        .panel.active{display:block;}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0;}
+        @media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+        label{display:block;font-size:13px;margin:9px 0 4px;color:var(--text-secondary);}
+        input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+        textarea{min-height:80px;resize:vertical;}
+        .result-box{margin-top:12px;padding:12px;background:#eff6ff;border-radius:8px;font-size:13px;white-space:pre-wrap;border:1px solid #bfdbfe;}
+        .warn-box{background:#fffbeb;border:1px solid #fcd34d;padding:10px;border-radius:8px;font-size:13px;margin:10px 0;color:#92400e;}
+        table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;}
+        th,td{border:1px solid var(--border);padding:8px;text-align:left;}
+        th{background:#f8fafc;}
+        .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;}
+        .badge-ok{background:#dcfce7;color:#15803d;}
+        .badge-warn{background:#fef3c7;color:#92400e;}
+        .badge-error{background:#fee2e2;color:#b91c1c;}
+        .side-card{background:#fff;border-radius:16px;padding:18px;border:1px solid var(--border);margin-bottom:16px;}
+        .side-title{font-weight:600;font-size:1rem;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+        .case-block{background:#f8fafc;padding:12px;border-radius:10px;margin-bottom:10px;font-size:0.88rem;border-left:4px solid var(--primary);}
+        .view-switch{display:flex;background:#e2e8f0;border-radius:30px;padding:3px;margin-bottom:12px;}
+        .view-btn{flex:1;padding:6px;border-radius:30px;border:none;background:transparent;font-size:13px;cursor:pointer;}
+        .view-btn.active{background:#fff;}
+        .log-area{max-height:220px;overflow-y:auto;background:#f8fafc;padding:10px;border-radius:8px;font-size:12px;}
+        .score-table{width:100%;font-size:12px;border-collapse:collapse;}
+        .score-table td,.score-table th{padding:6px;border:1px solid var(--border);}
+        .footer-tip{font-size:0.78rem;color:#64748b;text-align:center;margin-top:20px;}
+
+        /* ==========比赛模式：隐藏全部教学相关DOM【双视图】========== */
+        .teaching-only{transition:0.2s;}
+        /*开启比赛模式，所有teaching-only全部隐藏 */
+        .competition-mode .teaching-only{display:none !important;}
+
+        /*单证拍照样式 */
+        .doc-item{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;}
+        .doc-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .doc-preview{margin-top:8px;min-height:60px;border:1px dashed #bbbbbb;border-radius:6px;padding:6px;}
+        .doc-preview img{max-height:120px;max-width:100%;border-radius:4px;}
+
+        /*相机弹窗模态框*/
+        .camera-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:10px;}
+        .camera-box{background:#fff;border-radius:12px;max-width:640px;width:100%;overflow:hidden;}
+        .camera-box h4{padding:12px 16px;border-bottom:1px solid var(--border);}
+        .camera-video-wrap{background:#000;}
+        #camVideo{width:100%;display:block;}
+        .cam-actions{padding:12px;display:flex;gap:10px;justify-content:center;}
+
+        /*====实训报告弹窗样式====*/
+        .report-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:10000;display:none;align-items:center;justify-content:center;padding:12px;}
+        .report-box{background:#fff;border-radius:14px;max-width:850px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
+        .report-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+        .report-content{padding:16px;overflow-y:auto;flex:1;font-size:13px;white-space:pre-wrap;line-height:1.6;}
+        .report-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+        /* PDF导出隐藏区域，用于html2pdf渲染 */
+        #pdfRenderWrap{position:absolute;left:-9999px;top:0;width:800px;background:#fff;padding:30px;font-size:14px;line-height:1.8;white-space:pre-wrap;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sim-alert teaching-only">
+        <strong>⚠实训仿真声明：</strong>车智勘-汽车保险理赔实训智能助教；全部为虚拟模拟教学数据，不具备法律效力，仅用于车险理赔实训教学。【PDF报告导出｜教学/比赛双模式】
+    </div>
+    <div class="header">
+        <h1>🚗车智勘 车险理赔实训智能助教 <span id="modeLabel">教学实训模式</span></h1>
+        <div class="header-opt">
+            <button class="btn btn-primary" onclick="toggleViewMode()">🔄切换【比赛/教学】模式</button>
+            <button class="btn btn-warning teaching-only" onclick="fillDemo()">📝一键填充比赛样例数据</button>
+            <button class="btn btn-primary" onclick="openReportModal()">📄导出实训报告(PDF/TXT)</button>
+            <button class="btn btn-danger" onclick="fullReset()">🔄完整重置案件</button>
+        </div>
+    </div>
+    <div class="layout-wrap">
+        <!--左侧：选手核心操作区 -->
+        <div class="main-col">
+            <div class="card">
+                <div class="card-title">📋理赔业务流程操作</div>
+                <!--教学模式才显示：案例导入 -->
+                <div class="case-import-wrap teaching-only">
+                    <label>📂选择案例一键导入（仅填充表单，需手动提交各步骤）</label>
+                    <select class="case-select" id="caseSelect">
+                        <option value="">---请选择内置比赛案例模板---</option>
+                        <option value="case1">案例一｜大灯水晶脚断裂修换争议</option>
+                        <option value="case2">案例二｜网约车营运车辆剐蹭事故</option>
+                        <option value="case3">案例三｜车辆水淹推定全损事故</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="importSelectedCase()">✅导入选中案例</button>
+                </div>
+                <div class="step-tabs">
+                    <button class="step-tab active" data-step="s1">①报案登记</button>
+                    <button class="step-tab" data-step="s2">②查勘定损</button>
+                    <button class="step-tab" data-step="s3">③单证审核【拍照采集】</button>
+                    <button class="step-tab" data-step="s4">④核赔计算</button>
+                    <button class="step-tab" data-step="s5">⑤结案归档</button>
+                </div>
+                <!--S1 报案登记-->
+                <div class="panel active" id="s1">
+                    <div class="grid-2">
+                        <div><label>报案号(自动生成)</label><input id="rNo" readonly></div>
+                        <div><label>车牌号(虚拟)</label><input id="rPlate" placeholder="鲁B·赛1001"></div>
+                        <div><label>被保险人</label><input id="rName" placeholder="王参赛"></div>
+                        <div><label>联系电话</label><input id="rPhone" placeholder="13811112222"></div>
+                        <div><label>事故时间</label><input id="rTime" type="datetime-local"></div>
+                        <div><label>事故地点</label><input id="rPlace" placeholder="城市实训道路"></div>
+                        <div>
+                            <label>事故类型</label>
+                            <select id="rType">
+                                <option>单方事故</option>
+                                <option>双方事故</option>
+                                <option>多方事故</option>
+                                <option>人伤事故</option>
+                                <option>水淹/自然灾害</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>是否报警</label>
+                            <select id="rPolice"><option>是</option><option>否</option></select>
+                        </div>
+                    </div>
+                    <label>事故经过描述</label>
+                    <textarea id="rDesc" placeholder="填写事故发生过程"></textarea>
+                    <div class="warn-box teaching-only">💡比赛提示：车牌号、被保险人为必填项，不填无法提交报案。</div>
+                    <button class="btn btn-primary" onclick="saveReport()">提交报案登记</button>
+                    <div class="result-box" id="reportOut">等待提交报案信息</div>
+                </div>
+                <!--S2查勘定损-->
+                <div class="panel" id="s2">
+                    <div class="grid-2">
+                        <div><label>关联报案号</label><input id="sNo" readonly></div>
+                        <div><label>查勘员</label><input id="sMan" placeholder="李查勘"></div>
+                        <div>
+                            <label>查勘结论</label>
+                            <select id="sResult">
+                                <option>属于保险责任</option>
+                                <option>不属于保险责任</option>
+                                <option>需补充查勘</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>定损方式</label>
+                            <select id="sMode">
+                                <option>4S店定损</option>
+                                <option>综合修理厂定损</option>
+                                <option>推定全损</option>
+                            </select>
+                        </div>
+                        <div><label>配件费(元)</label><input id="sPart" type="number" value="0"></div>
+                        <div><label>工时费(元)</label><input id="sLabor" type="number" value="0"></div>
+                        <div><label>残值(元)</label><input id="sResid" type="number" value="0"></div>
+                        <div><label>施救费(元)</label><input id="sRescue" type="number" value="0"></div>
+                    </div>
+                    <label>定损说明</label>
+                    <textarea id="sDesc" placeholder="写明受损部件修复/更换判断依据"></textarea>
+                    <div class="warn-box teaching-only">💡比赛评分点：配件费、工时费必须分开录入，合并填写会扣考核分。</div>
+                    <button class="btn btn-primary" onclick="saveSurvey()">提交查勘定损</button>
+                    <div class="result-box" id="surveyOut">尚未提交查勘定损</div>
+                </div>
+                <!--S3单证审核【升级拍照】-->
+                <div class="panel" id="s3">
+                    <p style="font-size:13px;margin-bottom:10px;"><strong>勾选单证 + 拍照/上传影像；必须拍照才算影像收集完成</strong></p>
+                    <div id="docList"></div>
+                    <div class="warn-box teaching-only">💡比赛评分点：缺少关键单证影像直接进入核赔会记录操作错误扣分项。</div>
+                    <button class="btn btn-primary" onclick="saveAudit()">提交单证审核</button>
+                    <div class="result-box" id="auditOut">尚未执行单证审核</div>
+                </div>
+                <!--S4核赔计算-->
+                <div class="panel" id="s4">
+                    <div class="grid-2">
+                        <div><label>车辆损失金额(元)</label><input id="cLoss" type="number" value="0"></div>
+                        <div><label>交强险财产限额(元)</label><input id="cJq" type="number" value="2000"></div>
+                        <div><label>商业三者险限额(元)</label><input id="cSan" type="number" value="1000000"></div>
+                        <div><label>事故责任比例(%)</label><input id="cRate" type="number" value="100"></div>
+                        <div><label>免赔率(%)</label><input id="cDed" type="number" value="0"></div>
+                        <div><label>绝对免赔额(元)</label><input id="cAbs" type="number" value="0"></div>
+                    </div>
+                    <div class="warn-box teaching-only">💡比赛提示：定损提交后损失金额会自动带入，不要手动随意修改。</div>
+                    <button class="btn btn-primary" onclick="calcClaim()">试算核赔金额</button>
+                    <button class="btn btn-ghost" onclick="resetCalc()">重置计算参数</button>
+                    <div class="result-box" id="calcOut">未执行核赔试算</div>
+                </div>
+                <!--S5结案归档-->
+                <div class="panel" id="s5">
+                    <div class="grid-2">
+                        <div><label>关联报案号</label><input id="kNo" readonly></div>
+                        <div><label>核赔金额(元)</label><input id="kPay" type="number" value="0"></div>
+                        <div>
+                            <label>结案方式</label>
+                            <select id="kMode">
+                                <option>正常赔付结案</option>
+                                <option>拒赔结案</option>
+                                <option>注销结案</option>
+                                <option>协商结案</option>
+                            </select>
+                        </div>
+                        <div><label>支付对象</label><input id="kPayee" placeholder="被保险人/维修厂"></div>
+                    </div>
+                    <label>结案意见</label>
+                    <textarea id="kDesc" placeholder="填写结案处理意见"></textarea>
+                    <button class="btn btn-primary" onclick="saveClose()">提交结案归档</button>
+                    <div class="result-box" id="closeOut">未结案</div>
+                </div>
+            </div>
+            <!--案件台账-->
+            <div class="card">
+                <div class="card-title">📊实训案件台账</div>
+                <table id="ledger">
+                    <thead>
+                        <tr>
+                            <th>报案号</th>
+                            <th>车牌</th>
+                            <th>事故类型</th>
+                            <th>定损金额</th>
+                            <th>核赔金额</th>
+                            <th>案件状态</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <!--操作日志 -->
+            <div class="card">
+                <div class="card-title">📜选手操作日志 & 考核记录</div>
+                <div class="log-area" id="operLog"></div>
+            </div>
+        </div>
+        <!--右侧边栏 -->
+        <div class="side-col">
+            <!--教学参考案例 仅教学模式可见-->
+            <div class="side-card teaching-only">
+                <div class="side-title">📚比赛参考教学案例</div>
+                <div class="case-block">
+                    <strong>案例1｜大灯修换判断</strong>
+                    <p>大灯水晶脚断裂，受力承载部位，第三方胶粘修复无法达到原厂标准，应当更换总成。判断三要素：部件功能属性、修复工艺可达性、质保归属。</p>
+                </div>
+                <div class="case-block">
+                    <strong>案例2｜营运网约车剐蹭</strong>
+                    <p>交强险优先赔付2000财产损失；停运损失属于间接损失，保险不予赔付，由责任方自行承担；配件工时必须分开核算。</p>
+                </div>
+                <div class="case-block">
+                    <strong>案例3｜水淹推定全损</strong>
+                    <p>车辆涉水深度超过仪表台，电器大量损坏，维修成本接近实际价值，符合推定全损条件，需要核算实际价值、残值。</p>
+                </div>
+            </div>
+            <div class="side-card">
+                <div class="side-title">🏁考核评分看板
+                    <span style="font-size:12px;font-weight:normal;">(仿真评分)</span>
+                </div>
+                <div class="view-switch">
+                    <button class="view-btn active" data-view="stu">选手个人成绩</button>
+                    <button class="view-btn" data-view="tea">模拟班级统计</button>
+                </div>
+                <div id="stu" class="view-content">
+                    <table class="score-table">
+                        <thead>
+                            <tr><th>考核项目</th><th>权重</th><th>得分</th></tr>
+                        </thead>
+                        <tbody id="scoreBody">
+                            <tr><td>报案登记信息完整性</td><td>10%</td><td>--</td></tr>
+                            <tr><td>查勘定损（修换判断+分项录入）</td><td>45%</td><td>--</td></tr>
+                            <tr><td>单证+影像采集完整性</td><td>15%</td><td>--</td></tr>
+                            <tr><td>核赔金额计算正确性</td><td>20%</td><td>--</td></tr>
+                            <tr><td>结案归档规范性</td><td>10%</td><td>--</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top:8px;font-weight:bold;">当前总分：<span id="totalScore">0</span> /100</div>
+                </div>
+                <div id="tea" class="view-content" style="display:none;font-size:12px;">
+                    <p>模拟班级42人参赛，平均分68.5；薄弱点：大灯修换判断、险种赔付顺序、单证影像采集。</p>
+                    <p style="margin-top:6px;color:#b45309;">提示：比赛模式下该板块仅作参考。</p>
+                </div>
+            </div>
+            <div class="side-card teaching-only">
+                <div class="side-title">💡比赛操作提示</div>
+                <ul style="font-size:13px;line-height:1.7;padding-left:16px;">
+                    <li>完整流程顺序：报案→查勘定损→单证审核拍照→核赔计算→结案归档</li>
+                    <li>禁止跳过流程直接进入后续步骤，系统会记录扣分</li>
+                    <li>配件费、工时费必须分开填写，不能合并总金额</li>
+                    <li>单证不仅要勾选，还要完成拍照采集影像才算完整</li>
+                    <li>一键导入案例：填充表单，仍需要选手手动提交每一步</li>
+                    <li>实训完成后，点击【导出实训报告】生成案件完整实训文档</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!--相机弹窗模态框-->
+    <div class="camera-modal" id="cameraModal">
+        <div class="camera-box">
+            <h4>📷单证拍照采集：<span id="camDocName"></span></h4>
+            <div class="camera-video-wrap">
+                <video id="camVideo" autoplay muted playsinline></video>
+                <canvas id="camCanvas" style="display:none;"></canvas>
+            </div>
+            <div class="cam-actions">
+                <button class="btn btn-primary" onclick="capturePhoto()">📸拍照</button>
+                <button class="btn btn-warning" onclick="closeCamera()">❌关闭相机</button>
+            </div>
+        </div>
+    </div>
+
+    <!--实训报告弹窗 -->
+    <div class="report-modal" id="reportModal">
+        <div class="report-box">
+            <div class="report-head">
+                <h4>📄车险理赔实训案件报告</h4>
+                <button class="btn btn-sm btn-danger" onclick="closeReportModal()">✕关闭</button>
+            </div>
+            <div class="report-content" id="reportText"></div>
+            <div class="report-foot">
+                <button class="btn btn-ghost" onclick="copyReport()">📋复制文本</button>
+                <button class="btn btn-ghost" onclick="downloadTxt()">📄下载TXT</button>
+                <button class="btn btn-primary" onclick="downloadPdf()">💾导出PDF报告</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF渲染隐藏容器，html2pdf在这里渲染内容，不会显示页面 -->
+    <div id="pdfRenderWrap"></div>
+
+    <div class="footer-tip teaching-only">车智勘｜汽车保险理赔实训智能助教｜教学仿真，无法律效力｜PDF报告导出｜教学/比赛双视图</div>
+</div>
+
+<script>
+//全局存储
+const store = {
+    case:null,
+    logList:[],
+    score:{r:0,s:0,a:0,c:0,k:0},
+    isCompetitionView:false, // 视图模式 false=教学模式 true=比赛模式
+    docImages:{},
+    cameraTargetIndex:null,
+    cameraStream:null
+};
+const DOCS = ['报案记录','事故证明/报警记录','驾驶证（虚拟）','行驶证（虚拟）','保险单（虚拟）','现场照片','定损单','维修发票（虚拟）','身份证（虚拟）','银行账户（虚拟）'];
+//====内置案例库====
+const caseLibrary = {
+    case1:{
+        rPlate:"鲁B·赛1001",
+        rName:"王参赛",
+        rPhone:"13811112222",
+        rTime:"2026-10-27T14:30",
+        rPlace:"青岛实训大道",
+        rType:"双方事故",
+        rPolice:"是",
+        rDesc:"本车变道与对方车辆发生剐蹭，本车大灯水晶脚断裂，前保险杠受损，本车全责。",
+        sMan:"李查勘",
+        sResult:"属于保险责任",
+        sMode:"4S店定损",
+        sPart:26800,
+        sLabor:3200,
+        sResid:800,
+        sRescue:0,
+        sDesc:"大灯水晶脚属于受力承载部位发生断裂，第三方胶粘修复无法达到原厂装车标准，建议更换大灯总成；保险杠可修复。"
+    },
+    case2:{
+        rPlate:"鲁B·赛2002",
+        rName:"刘网约车",
+        rPhone:"13822223333",
+        rTime:"2026-10-26T09:15",
+        rPlace:"城市快速路出口",
+        rType:"双方事故",
+        rPolice:"是",
+        rDesc:"网约车正常行驶，被后方车辆追尾；本车为营运车辆，存在停运损失；对方仅投保交强险。",
+        sMan:"张查勘",
+        sResult:"属于保险责任",
+        sMode:"4S店定损",
+        sPart:6200,
+        sLabor:3500,
+        sResid:300,
+        sRescue:200,
+        sDesc:"后部保险杠、尾灯损坏，配件工时分开核算；营运车辆停运损失属于间接损失，不属于保险赔付范围。"
+    },
+    case3:{
+        rPlate:"鲁B·赛3003",
+        rName:"赵车主",
+        rPhone:"13833334444",
+        rTime:"2026-10-20T20:00",
+        rPlace:"低洼地下车库",
+        rType:"水淹/自然灾害",
+        rPolice:"否",
+        rDesc:"暴雨地下车库进水，车辆被水淹没至仪表台位置，发动机、车内电器模块大量进水受损。",
+        sMan:"孙查勘",
+        sResult:"属于保险责任",
+        sMode:"推定全损",
+        sPart:42000,
+        sLabor:12000,
+        sResid:14000,
+        sRescue:1500,
+        sDesc:"车辆水淹至仪表台，大量电器总成损坏，维修成本接近车辆实际价值，做推定全损处理。"
+    }
+};
+
+//=============【双视图切换函数：教学 ↔ 比赛模式】=============
+function toggleViewMode(){
+    store.isCompetitionView = !store.isCompetitionView;
+    document.body.classList.toggle("competition-mode", store.isCompetitionView);
+    const labelDom = document.getElementById("modeLabel");
+    if(store.isCompetitionView){
+        labelDom.innerText = "正式比赛模式";
+        writeLog("🔄切换视图：【正式比赛模式】已开启，隐藏全部教学提示、参考案例");
+    }else{
+        labelDom.innerText = "教学实训模式";
+        writeLog("🔄切换视图：【教学实训模式】已开启，恢复全部教学内容");
+    }
+}
+
+//=============相机拍照全套函数=============
+async function openCamera(docIndex){
+    store.cameraTargetIndex = docIndex;
+    document.getElementById("camDocName").innerText = DOCS[docIndex];
+    document.getElementById("cameraModal").style.display="flex";
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+        store.cameraStream = stream;
+        document.getElementById("camVideo").srcObject = stream;
+    }catch(err){
+        alert("⚠无法调用摄像头：浏览器拒绝权限/设备无摄像头；可以使用【选择图片】按钮模拟上传照片");
+        writeLog(`⚠单证【${DOCS[docIndex]}】调用摄像头失败：${err.message}`);
+    }
+}
+function closeCamera(){
+    if(store.cameraStream){
+        store.cameraStream.getTracks().forEach(t=>t.stop());
+        store.cameraStream=null;
+    }
+    document.getElementById("cameraModal").style.display="none";
+    store.cameraTargetIndex=null;
+}
+function capturePhoto(){
+    const idx = store.cameraTargetIndex;
+    if(idx===null) return;
+    const video = document.getElementById("camVideo");
+    const canvas = document.getElementById("camCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const base64 = canvas.toDataURL("image/jpeg",0.8);
+    store.docImages[idx] = base64;
+    writeLog(`📸完成单证拍照：${DOCS[idx]}`);
+    buildDocs();
+    closeCamera();
+}
+function handleDocFileSelect(index,fileInputDom){
+    const file = fileInputDom.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e=>{
+        store.docImages[index] = e.target.result;
+        writeLog(`🖼选择图片作为单证影像：${DOCS[index]}`);
+        buildDocs();
+    }
+    reader.readAsDataURL(file);
+}
+
+//====================实训报告逻辑【新增PDF导出】====================
+function buildReportPlainText(){
+    const {case:caseData,logList,score}=store;
+    const totalScore = score.r+score.s+score.a+score.c+score.k;
+    let report = "====================车智勘 车险理赔实训案件报告====================\n";
+    report += `报告生成时间：${new Date().toLocaleString()}\n`;
+    if(!caseData){
+        report += "\n⚠警告：暂无实训案件数据，请先完成案件实训！\n";
+        return report;
+    }
+    report += "\n【一、案件基础报案信息】\n";
+    report += `报案号：${caseData.no||"无"}\n`;
+    report += `车牌号：${caseData.plate||"无"}\n`;
+    report += `被保险人：${caseData.name||"无"}\n`;
+    report += `联系电话：${caseData.phone||"无"}\n`;
+    report += `事故时间：${caseData.time||"无"}\n`;
+    report += `事故地点：${caseData.place||"无"}\n`;
+    report += `事故类型：${caseData.type||"无"}\n`;
+    report += `是否报警：${caseData.police||"无"}\n`;
+    report += `事故经过：${caseData.desc||"无"}\n`;
+    report += `案件当前状态：${caseData.status||"未开始"}\n`;
+
+    report += "\n【二、查勘定损信息】\n";
+    if(caseData.survey){
+        report += `查勘员：${caseData.survey.man||"无"}\n`;
+        report += `查勘结论：${caseData.survey.result||"无"}\n`;
+        report += `定损方式：${caseData.survey.mode||"无"}\n`;
+        report += `配件费：${caseData.survey.part} 元\n`;
+        report += `工时费：${caseData.survey.labor} 元\n`;
+        report += `残值：${caseData.survey.resid} 元\n`;
+        report += `施救费：${caseData.survey.rescue} 元\n`;
+        report += `定损合计金额：${caseData.survey.total.toFixed(2)} 元\n`;
+        report += `定损说明：${caseData.survey.desc||"无"}\n`;
+    }else{
+        report += ">> 尚未提交查勘定损\n";
+    }
+
+    report += "\n【三、单证与影像采集情况】\n";
+    if(caseData.audit){
+        report += `已勾选单证：${caseData.audit.checked.join("、")||"无"}\n`;
+        report += `缺失未勾选单证：${caseData.audit.missing.join("、")||"无"}\n`;
+        report += `已勾选但是缺少拍照影像单证：${caseData.audit.missingImage.join("、")||"无"}\n`;
+    }else{
+        report += ">> 尚未执行单证审核提交\n";
+    }
+
+    report += "\n【四、核赔理算结果】\n";
+    report += `最终核赔赔付金额：${Number(caseData.pay||0).toFixed(2)} 元\n`;
+
+    report += "\n【五、结案归档信息】\n";
+    if(caseData.close){
+        report += `结案方式：${caseData.close.mode}\n`;
+        report += `支付对象：${caseData.close.payee||"未填写"}\n`;
+        report += `结案意见：${caseData.close.desc||"未填写"}\n`;
+    }else{
+        report += ">> 尚未完成结案归档\n";
+    }
+
+    report += "\n【六、实训考核得分】\n";
+    report += `报案登记信息完整性：${score.r}/10\n`;
+    report += `查勘定损（修换判断+分项录入）：${score.s}/45\n`;
+    report += `单证+影像采集完整性：${score.a}/15\n`;
+    report += `核赔金额计算正确性：${score.c}/20\n`;
+    report += `结案归档规范性：${score.k}/10\n`;
+    report += `>>>>>>实训总得分：${totalScore} /100 <<<<<<\n`;
+
+    report += "\n【七、选手全部操作日志（含扣分记录）】\n";
+    if(logList.length>0){
+        logList.forEach(line=>{report += line+"\n";})
+    }else{
+        report += "暂无操作日志记录\n";
+    }
+    report += "\n====================报告结束====================\n";
+    report += "说明：本报告来自车智勘车险理赔实训智能助教，全部数据为虚拟教学仿真，不具备任何法律效力。\n";
+    return report;
+}
+
+//打开弹窗
+function openReportModal(){
+    const txt = buildReportPlainText();
+    document.getElementById("reportText").innerText = txt;
+    document.getElementById("reportModal").style.display="flex";
+}
+function closeReportModal(){
+    document.getElementById("reportModal").style.display="none";
+}
+async function copyReport(){
+    const text = buildReportPlainText();
+    try{
+        await navigator.clipboard.writeText(text);
+        alert("✅报告已经复制到剪贴板，粘贴记事本/Word");
+    }catch(e){
+        alert("⚠浏览器复制失败，请手动全选弹窗文字复制！");
+    }
+}
+//下载txt
+function downloadTxt(){
+    const text = buildReportPlainText();
+    const blob = new Blob([text],{type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const no = store.case ? store.case.no : "新案件";
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `车智勘_车险实训报告_${no}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert("✅TXT报告下载完成");
+}
+//【新增导出PDF】 html2pdf生成PDF
+function downloadPdf(){
+    const text = buildReportPlainText();
+    const wrapDom = document.getElementById("pdfRenderWrap");
+    wrapDom.innerText = text;
+    const no = store.case ? store.case.no : "新案件";
+    const opt = {
+        margin:12,
+        filename:`车智勘_车险实训报告_${no}.pdf`,
+        image:{type:"jpeg",quality:0.95},
+        html2canvas:{scale:2},
+        jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}
+    };
+    html2pdf().set(opt).from(wrapDom).save().then(()=>{
+        wrapDom.innerText = "";
+        alert("✅PDF报告导出成功！");
+    }).catch(err=>{
+        alert("❌PDF导出失败："+err.message+"，请改用TXT下载");
+        wrapDom.innerText = "";
+    });
+}
+
+//导入选中案例
+function importSelectedCase(){
+    const selectVal = document.getElementById("caseSelect").value;
+    if(!selectVal){
+        alert("请从下拉列表选择一个案例模板");
+        return;
+    }
+    const c = caseLibrary[selectVal];
+    document.getElementById("rPlate").value = c.rPlate;
+    document.getElementById("rName").value = c.rName;
+    document.getElementById("rPhone").value = c.rPhone;
+    document.getElementById("rTime").value = c.rTime;
+    document.getElementById("rPlace").value = c.rPlace;
+    document.getElementById("rType").value = c.rType;
+    document.getElementById("rPolice").value = c.rPolice;
+    document.getElementById("rDesc").value = c.rDesc;
+    document.getElementById("sMan").value = c.sMan;
+    document.getElementById("sResult").value = c.sResult;
+    document.getElementById("sMode").value = c.sMode;
+    document.getElementById("sPart").value = c.sPart;
+    document.getElementById("sLabor").value = c.sLabor;
+    document.getElementById("sResid").value = c.sResid;
+    document.getElementById("sRescue").value = c.sRescue;
+    document.getElementById("sDesc").value = c.sDesc;
+    writeLog(`📂导入案例模板：${selectVal}`);
+    alert("✅案例表单已填充完成！请手动依次提交报案登记、查勘定损，再做单证拍照审核等步骤。");
+}
+//生成报案号
+function genNo(){
+    return "JX"+new Date().getFullYear()+String(Math.floor(Math.random()*900000+100000));
+}
+//写入操作日志
+function writeLog(text){
+    const time=new Date().toLocaleTimeString();
+    store.logList.push(`[${time}] ${text}`);
+    document.getElementById("operLog").innerHTML=store.logList.map(i=>`<div>${i}</div>`).join("");
+}
+//案件完整重置
+function fullReset(){
+    store.case=null;
+    store.logList=[];
+    store.score={r:0,s:0,a:0,c:0,k:0};
+    store.docImages = {};
+    const no=genNo();
+    document.getElementById("rNo").value=no;
+    document.getElementById("sNo").value=no;
+    document.getElementById("kNo").value=no;
+    ["rPlate","rName","rPhone","rPlace","rDesc","sMan","sDesc","kPayee","kDesc"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("rTime").value="";
+    document.getElementById("rType").value="单方事故";
+    document.getElementById("rPolice").value="否";
+    document.getElementById("sResult").value="属于保险责任";
+    document.getElementById("sMode").value="4S店定损";
+    ["sPart","sLabor","sResid","sRescue"].forEach(id=>document.getElementById(id).value=0);
+    resetCalc();
+    document.getElementById("kPay").value=0;
+    document.getElementById("kMode").value="正常赔付结案";
+    document.getElementById("caseSelect").value="";
+    document.getElementById("reportOut").textContent="等待提交报案信息";
+    document.getElementById("surveyOut").textContent="尚未提交查勘定损";
+    document.getElementById("auditOut").textContent="尚未执行单证审核";
+    document.getElementById("calcOut").textContent="未执行核赔试算";
+    document.getElementById("closeOut").textContent="未结案";
+    buildDocs();
+    updateLedger();
+    updateScore();
+    writeLog("🔄系统执行完整案件重置，生成新报案号"+no);
+}
+//一键填充比赛样例数据
+function fillDemo(){
+    const no=document.getElementById("rNo").value;
+    document.getElementById("rPlate").value="鲁B·赛1001";
+    document.getElementById("rName").value="王参赛";
+    document.getElementById("rPhone").value="13811112222";
+    document.getElementById("rTime").value="2026-10-27T14:30";
+    document.getElementById("rPlace").value="青岛实训大道";
+    document.getElementById("rType").value="双方事故";
+    document.getElementById("rPolice").value="是";
+    document.getElementById("rDesc").value="车辆变道剐蹭，大灯水晶脚断裂，前保险杠受损；全责为本车。";
+    document.getElementById("sMan").value="李查勘";
+    document.getElementById("sResult").value="属于保险责任";
+    document.getElementById("sMode").value="4S店定损";
+    document.getElementById("sPart").value="26800";
+    document.getElementById("sLabor").value="3200";
+    document.getElementById("sResid").value="800";
+    document.getElementById("sRescue").value="0";
+    document.getElementById("sDesc").value="大灯水晶脚受力断裂，无法修复，建议更换大灯总成；保险杠修复。";
+    writeLog("📝一键填充比赛演示样例数据");
+    alert("样例数据已填充，请依次完成：提交报案→提交查勘定损→单证拍照+审核→核赔→结案");
+}
+
+//构建单证复选框+拍照按钮+预览
+function buildDocs(){
+    let html = "";
+    DOCS.forEach((d,i)=>{
+        const hasImg = !!store.docImages[i];
+        html += `
+        <div class="doc-item">
+            <div class="doc-row">
+                <input type="checkbox" id="doc${i}" style="width:auto;margin:4px;">
+                <span style="flex:1;font-size:13px;">${d}</span>
+                <button class="btn btn-sm btn-primary" onclick="openCamera(${i})">📷拍照</button>
+                <label class="btn btn-sm btn-ghost" style="margin:0;">
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleDocFileSelect(${i},this)">
+                    🖼选择图片
+                </label>
+            </div>
+            <div class="doc-preview">
+                ${hasImg ? `<img src="${store.docImages[i]}" alt="${d}">` : `<span style="color:#888;font-size:12px;">暂无影像照片</span>`}
+            </div>
+        </div>
+        `;
+    });
+    document.getElementById("docList").innerHTML = html;
+}
+//步骤标签切换
+document.querySelectorAll(".step-tabs .step-tab").forEach(tab=>{
+    tab.onclick=()=>{
+        document.querySelectorAll(".step-tab").forEach(t=>t.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.step).classList.add("active");
+    }
+});
+//成绩视图切换
+document.querySelectorAll(".view-btn").forEach(btn=>{
+    btn.onclick=()=>{
+        document.querySelectorAll(".view-btn").forEach(b=>b.classList.remove("active"));
+        document.querySelectorAll(".view-content").forEach(c=>c.style.display="none");
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.view).style.display="block";
+    }
+});
+//更新评分面板
+function updateScore(){
+    const {r,s,a,c,k}=store.score;
+    const total=r+s+a+c+k;
+    document.getElementById("totalScore").innerText=total;
+    const tbody=document.getElementById("scoreBody");
+    tbody.innerHTML=`
+        <tr><td>报案登记信息完整性</td><td>10%</td><td>${r}/10</td></tr>
+        <tr><td>查勘定损（修换判断+分项录入）</td><td>45%</td><td>${s}/45</td></tr>
+        <tr><td>单证+影像采集完整性</td><td>15%</td><td>${a}/15</td></tr>
+        <tr><td>核赔金额计算正确性</td><td>20%</td><td>${c}/20</td></tr>
+        <tr><td>结案归档规范性</td><td>10%</td><td>${k}/10</td></tr>
+    `;
+}
+//1报案登记
+function saveReport(){
+    const v=id=>document.getElementById(id).value.trim();
+    if(!v("rPlate")||!v("rName")){
+        alert("【比赛校验】车牌号、被保险人不能为空！");
+        writeLog("❌报案提交失败，缺少必填字段");
+        return;
+    }
+    store.case={
+        no:v("rNo"),plate:v("rPlate"),name:v("rName"),phone:v("rPhone"),
+        time:v("rTime"),place:v("rPlace"),type:v("rType"),police:v("rPolice"),desc:v("rDesc"),
+        status:"已报案",survey:null,audit:null,pay:0
+    };
+    store.score.r=10;
+    document.getElementById("reportOut").textContent=`✅报案登记提交成功【实训仿真】\n报案号：${store.case.no}\n车牌：${store.case.plate}\n事故类型：${store.case.type}\n状态：已报案`;
+    writeLog(`✅完成报案登记，报案号${store.case.no}`);
+    updateLedger();updateScore();
+}
+//2查勘定损
+function saveSurvey(){
+    if(!store.case){alert("【比赛校验】请先完成报案登记！");writeLog("❌跳过报案直接提交定损，操作违规");return;}
+    const num=id=>Number(document.getElementById(id).value||0);
+    const total=num("sPart")+num("sLabor")+num("sRescue")-num("sResid");
+    store.case.survey={
+        man:document.getElementById("sMan").value,
+        result:document.getElementById("sResult").value,
+        mode:document.getElementById("sMode").value,
+        part:num("sPart"),labor:num("sLabor"),resid:num("sResid"),rescue:num("sRescue"),total:total,desc:document.getElementById("sDesc").value
+    };
+    store.case.status="已查勘定损";
+    let sScore=0;
+    if(num("sPart")>0&&num("sLabor")>0)sScore+=35;else writeLog("⚠扣分：配件费或者工时费未填写，未分项录入");
+    if(document.getElementById("sDesc").value.trim().length>15)sScore+=10;else writeLog("⚠扣分：定损说明过短，缺少修换判断描述");
+    store.score.s=sScore;
+    document.getElementById("surveyOut").textContent=`✅查勘定损提交成功【实训仿真】\n查勘结论：${store.case.survey.result}\n定损合计：¥${total.toFixed(2)}`;
+    document.getElementById("cLoss").value=total;
+    writeLog(`✅提交查勘定损，定损总金额${total.toFixed(2)}，本环节得分${sScore}/45`);
+    updateLedger();updateScore();
+}
+//3单证审核
+function saveAudit(){
+    if(!store.case){alert("【比赛校验】请先完成报案登记");writeLog("❌跳过报案直接单证审核");return;}
+    const checked=[];
+    const missing=[];
+    const missingImage=[];
+    DOCS.forEach((doc,i)=>{
+        const isCheck = document.getElementById("doc"+i).checked;
+        if(isCheck){
+            checked.push(doc);
+            if(!store.docImages[i]){
+                missingImage.push(doc);
+            }
+        }else{
+            missing.push(doc);
+        }
+    });
+    store.case.audit={checked,missing,missingImage};
+    if(missing.length===0 && missingImage.length===0){
+        store.case.status="单证齐全（影像已采集）";
+    }else if(missing.length===0 && missingImage.length>0){
+        store.case.status="单证勾选完成，但影像缺失";
+    }else{
+        store.case.status="单证待补充";
+    }
+    let aScore=0;
+    if(missing.length===0 && missingImage.length===0){
+        aScore=15;
+    }else{
+        if(missing.length>0) writeLog(`⚠缺失单证勾选${missing.length}份`);
+        if(missingImage.length>0) writeLog(`⚠单证缺少影像照片：${missingImage.join('、')}`);
+    }
+    store.score.a=aScore;
+    let outText = `📋单证审核结果【实训仿真】\n已勾选${checked.length}/${DOCS.length}`;
+    if(missing.length>0) outText +=`\n⚠未勾选单证：${missing.join("、")}`;
+    if(missingImage.length>0) outText +=`\n⚠勾选但缺少拍照影像：${missingImage.join("、")}`;
+    if(missing.length===0 && missingImage.length===0) outText +=`\n✅单证+影像全部采集齐全，可以进入核赔`;
+    document.getElementById("auditOut").textContent = outText;
+    writeLog(`✅单证审核完成，已勾选${checked.length}份，影像齐全：${missingImage.length===0}，得分${aScore}/15`);
+    updateLedger();updateScore();
+}
+//4核赔计算
+function calcClaim(){
+    if(!store.case){alert("【比赛校验】需要先完成报案");writeLog("❌无案件直接核赔，操作违规");return;}
+    const n=id=>Number(document.getElementById(id).value||0);
+    const loss=n("cLoss"),jq=n("cJq"),rate=n("cRate")/100,ded=n("cDed")/100,abs=n("cAbs");
+    if(loss<=0){alert("【比赛校验】车辆损失金额不能为0");writeLog("❌核赔失败，损失金额为0");return;}
+    const jqPay=Math.min(loss,jq);
+    let bizPay=Math.max(0,loss-jqPay)*rate;
+    bizPay=bizPay*(1-ded)-abs;
+    bizPay=Math.max(0,bizPay);
+    const total=jqPay+bizPay;
+    store.case.pay=total;
+    store.score.c=20;
+    document.getElementById("kPay").value=total.toFixed(2);
+    document.getElementById("calcOut").textContent=`🧮核赔试算【实训仿真公式】
+车辆损失：¥${loss.toFixed(2)}
+交强险赔付：¥${jqPay.toFixed(2)}
+商业险赔付：¥${bizPay.toFixed(2)}
+合计核赔金额：¥${total.toFixed(2)}`;
+    writeLog(`✅核赔计算完成，合计赔付${total.toFixed(2)}，得分20/20`);
+    updateLedger();updateScore();
+}
+function resetCalc(){
+    ["cLoss","cJq","cSan","cRate","cDed","cAbs"].forEach((id,i)=>{
+        document.getElementById(id).value=[0,2000,1000000,100,0,0][i];
+    });
+    document.getElementById("calcOut").textContent="未执行核赔试算";
+}
+//5结案归档
+function saveClose(){
+    if(!store.case){alert("【比赛校验】不存在案件，不能结案");writeLog("❌无案件直接结案");return;}
+    const pay=Number(document.getElementById("kPay").value||0);
+    store.case.pay=pay;
+    store.case.status="已结案";
+    store.case.close={
+        mode:document.getElementById("kMode").value,
+        payee:document.getElementById("kPayee").value,
+        desc:document.getElementById("kDesc").value
+    };
+    let kScore=0;
+    if(document.getElementById("kPayee").value.trim().length>0&&document.getElementById("kDesc").value.trim().length>10)kScore=10;
+    else writeLog("⚠扣分：支付对象或结案意见填写不完整");
+    store.score.k=kScore;
+    document.getElementById("closeOut").textContent=`🗂结案归档成功【实训仿真】
+报案号：${store.case.no}
+结案方式：${store.case.close.mode}
+核赔金额：¥${pay.toFixed(2)}
+支付对象：${store.case.close.payee||"未填写"}
+案件状态：已结案`;
+    writeLog(`✅完成结案归档，结案方式${store.case.close.mode}，得分${kScore}/10`);
+    updateLedger();updateScore();
+}
+//台账更新
+function updateLedger(){
+    const tb=document.querySelector("#ledger tbody");
+    if(!store.case){
+        tb.innerHTML="<tr><td colspan='6' style='color:#888;text-align:center'>暂无实训案件</td></tr>";
+        return;
+    }
+    const c=store.case;
+    const total=c.survey?c.survey.total:0;
+    let badgeHtml="";
+    if(c.status==="已结案")badgeHtml=`<span class="badge badge-ok">已结案</span>`;
+    else if(c.status.includes("影像缺失"))badgeHtml=`<span class="badge badge-warn">${c.status}</span>`;
+    else if(c.status==="单证待补充")badgeHtml=`<span class="badge badge-warn">${c.status}</span>`;
+    else badgeHtml=`<span class="badge badge-warn">${c.status}</span>`;
+    tb.innerHTML=`<tr>
+        <td>${c.no}</td>
+        <td>${c.plate}</td>
+        <td>${c.type}</td>
+        <td>¥${total.toFixed(2)}</td>
+        <td>¥${Number(c.pay||0).toFixed(2)}</td>
+        <td>${badgeHtml}</td>
+    </tr>`;
+}
+window.onload=()=>{
+    fullReset();
+    writeLog("系统初始化完成【车智勘｜PDF报告导出｜教学/比赛双视图】");
+}
+</script>
+</body>
+</html>
